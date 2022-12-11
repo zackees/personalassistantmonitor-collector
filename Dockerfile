@@ -15,4 +15,4 @@ RUN pip install -r requirements.txt
 COPY . .
 RUN python -m pip install -e .
 # Expose the port and then launch the app.
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "80", "fastapi_template_project.app:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "80", "personalmonitor_collector.app:app"]

@@ -11,8 +11,8 @@ from setuptools import Command, find_packages, setup
 # The directory containing this file
 HERE = os.path.dirname(__file__)
 
-REPO_NAME = "fastapi-template-project"
-PACKAGE_NAME = "fastapi_template_project"
+REPO_NAME = "personalmonitor-collector"
+PACKAGE_NAME = "personalmonitor_collector"
 DESCRIPTION = "Server to run a webtorrent movie"
 URL = f"https://github.com/zackees/{REPO_NAME}"
 EMAIL = "dont@email.me"
