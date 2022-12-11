@@ -12,7 +12,7 @@ from hmac import compare_digest
 # import shutil
 import uvicorn  # type: ignore
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
-from fastapi.responses import RedirectResponse, JSONResponse  # type: ignore
+from fastapi.responses import RedirectResponse, JSONResponse, PlainTextResponse  # type: ignore
 from fastapi import FastAPI, UploadFile, File  # type: ignore
 
 from personalmonitor_collector.version import VERSION
@@ -83,10 +83,10 @@ async def route_upload(
     mac_address: str,
     datafile: UploadFile = File(...),
     metadatafile: UploadFile = File(...),
-) -> JSONResponse:
+) -> PlainTextResponse:
     """TODO - Add description."""
     if not compare_digest(api_key, API_KEY):
-        return JSONResponse({"error": "Invalid API key"}, status_code=403)
+        return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     log.info(f"Upload called with:\n  File: {datafile.filename}\nMAC address: {mac_address}")
     with TemporaryDirectory() as temp_dir:
         temp_datapath: str = os.path.join(temp_dir, datafile.filename)
@@ -98,7 +98,7 @@ async def route_upload(
         await metadatafile.close()
         log.info(f"Downloaded to {metadatafile.filename} to {temp_metadatapath}")
         # shutil.move(temp_path, final_path)
-    return JSONResponse({"hello": "world"})
+    return PlainTextResponse(f"Uploaded {datafile.filename} and {metadatafile.filename}")
 
 
 if __name__ == "__main__":
