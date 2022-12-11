@@ -5,9 +5,9 @@
 import os
 from datetime import datetime
 import uvicorn  # type: ignore
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse, JSONResponse
-from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware  # type: ignore
+from fastapi.responses import RedirectResponse, JSONResponse  # type: ignore
+from fastapi import FastAPI  # type: ignore
 
 from personalmonitor_collector.version import VERSION
 
@@ -45,13 +45,13 @@ app.add_middleware(
 
 
 @app.get("/", include_in_schema=False)
-async def index() -> RedirectResponse:
+async def route_index() -> RedirectResponse:
     """By default redirect to the fastapi docs."""
     return RedirectResponse(url="/docs", status_code=302)
 
 
 @app.get("/get")
-async def log_file() -> JSONResponse:
+async def route_get() -> JSONResponse:
     """TODO - Add description."""
     return JSONResponse({"hello": "world"})
 
