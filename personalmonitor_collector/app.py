@@ -17,7 +17,7 @@ from fastapi import FastAPI, UploadFile, File  # type: ignore
 
 from personalmonitor_collector.version import VERSION
 from personalmonitor_collector.settings import API_KEY, UPLOAD_CHUNK_SIZE
-from personalmonitor_collector.log import make_logger
+from personalmonitor_collector.log import make_logger, get_log_reversed
 
 STARTUP_DATETIME = datetime.now()
 
@@ -75,6 +75,15 @@ async def route_get() -> JSONResponse:
 def digest_key(key: str) -> str:
     """TODO - Add description."""
     return key
+
+
+# get the log file
+@app.get("/log")
+def route_log() -> PlainTextResponse:
+    """Gets the log file."""
+    log.info("Log called")
+    out = get_log_reversed(100)
+    return PlainTextResponse(out)
 
 
 @app.post("/upload")
