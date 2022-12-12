@@ -85,6 +85,18 @@ def route_log() -> PlainTextResponse:
     return PlainTextResponse(out)
 
 
+@app.get("/time")
+def route_time(use_iso_fmt: bool = False) -> PlainTextResponse:
+    """Gets the current timestamp. if use_iso_fmt is False then use unix timestamp."""
+    if use_iso_fmt:
+        # return PlainTextResponse(str(datetime.now()))
+        # as isoformat
+        return PlainTextResponse(str(datetime.now().isoformat()))
+    else:
+        unix_timestamp = float(datetime.now().timestamp())
+        return PlainTextResponse(str(unix_timestamp))
+
+
 @app.post("/upload")
 async def route_upload(
     api_key: str,
