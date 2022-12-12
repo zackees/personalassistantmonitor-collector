@@ -28,14 +28,13 @@ log = make_logger(__name__)
 def app_description() -> str:
     """Get the app description."""
     lines = []
-    lines.append("# personalmonitor_collector")
     lines.append("  * Version: " + VERSION)
     lines.append("  * Started at: " + str(STARTUP_DATETIME))
     return "\n".join(lines)
 
 
 app = FastAPI(
-    title="Video Server",
+    title="Personal Monitor Assistant Collector",
     version=VERSION,
     redoc_url=None,
     license_info={
