@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 from tempfile import TemporaryDirectory
 from hmac import compare_digest
+import requests  # type: ignore
 
 # import shutil
 import uvicorn  # type: ignore
@@ -86,15 +87,22 @@ def route_log() -> PlainTextResponse:
 
 
 @app.get("/time")
-def route_time(use_iso_fmt: bool = False) -> PlainTextResponse:
+async def route_time(use_iso_fmt: bool = False) -> PlainTextResponse:
     """Gets the current timestamp. if use_iso_fmt is False then use unix timestamp."""
     if use_iso_fmt:
         # return PlainTextResponse(str(datetime.now()))
         # as isoformat
         return PlainTextResponse(str(datetime.now().isoformat()))
-    else:
-        unix_timestamp = float(datetime.now().timestamp())
-        return PlainTextResponse(str(unix_timestamp))
+    unix_timestamp = float(datetime.now().timestamp())
+    return PlainTextResponse(str(unix_timestamp))
+
+
+@app.get("/geocode_ip/{ip_address}")
+def route_geocode_ip(ip_address: str) -> JSONResponse:
+    """TODO - Add description."""
+    request_url = f"https://www.iplocate.io/api/lookup/{ip_address}"
+    response = requests.get(request_url, timeout=10)
+    return JSONResponse(status_code=response.status_code, content=response.json())
 
 
 @app.post("/upload")
