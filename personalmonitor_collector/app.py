@@ -81,7 +81,9 @@ def digest_key(key: str) -> str:
 @app.get("/log")
 def route_log() -> PlainTextResponse:
     """Gets the log file."""
-    out = get_log_reversed(100)
+    out = get_log_reversed(100).strip()
+    if not out:
+        out = "(empty log file)"
     return PlainTextResponse(out)
 
 
