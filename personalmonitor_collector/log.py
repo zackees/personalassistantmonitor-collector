@@ -2,7 +2,6 @@
 Logging module for personalmonitor_collector.
 """
 
-import os
 from pathlib import Path
 from logging import getLogger, INFO, Logger, Formatter, StreamHandler
 from concurrent_log_handler import ConcurrentRotatingFileHandler  # type: ignore
