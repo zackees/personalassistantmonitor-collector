@@ -14,7 +14,7 @@ import requests  # type: ignore
 import uvicorn  # type: ignore
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
 from fastapi.responses import RedirectResponse, JSONResponse, PlainTextResponse  # type: ignore
-from fastapi import FastAPI, UploadFile, File  # type: ignore
+from fastapi import FastAPI, UploadFile, File, Request  # type: ignore
 
 from personalmonitor_collector.version import VERSION
 from personalmonitor_collector.settings import API_KEY, UPLOAD_CHUNK_SIZE
@@ -97,9 +97,10 @@ async def route_time(use_iso_fmt: bool = False) -> PlainTextResponse:
     return PlainTextResponse(str(unix_timestamp))
 
 
-@app.get("/geocode_ip/{ip_address}")
-def route_geocode_ip(ip_address: str) -> JSONResponse:
-    """TODO - Add description."""
+@app.get("/geocode_ip")
+def route_geocode_ip(request: Request, ip_address: str | None = None) -> JSONResponse:
+    """Geocodes the current request ip or the ip_address if provided."""
+    ip_address = ip_address or request.client.host
     request_url = f"https://www.iplocate.io/api/lookup/{ip_address}"
     response = requests.get(request_url, timeout=10)
     return JSONResponse(status_code=response.status_code, content=response.json())
