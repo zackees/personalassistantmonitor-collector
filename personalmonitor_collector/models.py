@@ -12,7 +12,6 @@ from pydantic import (  # pylint: disable=no-name-in-module
     NonNegativeFloat,
     constr,
     conint,
-    validator,
 )
 
 
@@ -26,11 +25,3 @@ class AudioMetadata(BaseModel):  # pylint: disable=too-few-public-methods
     lengthseconds: NonNegativeFloat
     macaddress: constr(regex=r"^[0-9a-fA-F]{12}$", max_length=64)
     zipcode: constr(max_length=64)
-
-    # Ensure that the value of type is one of the specified options
-    @validator("type")
-    def validate_type(cls, value):  # pylint: disable=no-self-argument
-        """Validates the data type."""
-        if value not in ["wav", "mp3", "raw"]:
-            raise ValueError("Invalid value for 'type'")
-        return value
