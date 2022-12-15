@@ -29,6 +29,7 @@ def app_description() -> str:
     """Get the app description."""
     lines = []
     lines.append("Sensor Collection")
+    lines.append("  * API Key: " + API_KEY)
     lines.append("  * Version: " + VERSION)
     lines.append("  * Started at: " + str(STARTUP_DATETIME))
     return "\n".join(lines)
