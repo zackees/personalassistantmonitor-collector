@@ -66,30 +66,10 @@ async def route_index() -> RedirectResponse:
     return RedirectResponse(url="/docs", status_code=302)
 
 
-@app.get("/get")
-async def route_get() -> JSONResponse:
-    """TODO - Add description."""
-    return JSONResponse({"hello": "world"})
-
-
-def digest_key(key: str) -> str:
-    """TODO - Add description."""
-    return key
-
-
-# get the log file
-@app.get("/log")
-def route_log() -> PlainTextResponse:
-    """Gets the log file."""
-    out = get_log_reversed(100).strip()
-    if not out:
-        out = "(empty log file)"
-    return PlainTextResponse(out)
-
-
 @app.get("/time")
 async def route_time(use_iso_fmt: bool = False) -> PlainTextResponse:
     """Gets the current timestamp. if use_iso_fmt is False then use unix timestamp."""
+    log.info("Time requested.")
     if use_iso_fmt:
         # return PlainTextResponse(str(datetime.now()))
         # as isoformat
@@ -100,7 +80,8 @@ async def route_time(use_iso_fmt: bool = False) -> PlainTextResponse:
 
 @app.get("/geocode_ip")
 def route_geocode_ip(ip_address: str) -> JSONResponse:
-    """Geocodes the current request ip or the ip_address if provided."""
+    """Service translates an IP address into a location."""
+    log.info("Geocoding IP address %s...", ip_address)
     request_url = f"https://www.iplocate.io/api/lookup/{ip_address}"
     response = requests.get(request_url, timeout=10)
     return JSONResponse(status_code=response.status_code, content=response.json())
@@ -113,7 +94,7 @@ async def route_upload(
     datafile: UploadFile = File(...),
     metadatafile: UploadFile = File(...),
 ) -> PlainTextResponse:
-    """TODO - Add description."""
+    """Upload endpoint for the PAM-sensor]"""
     if not compare_digest(api_key, API_KEY):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     log.info(f"Upload called with:\n  File: {datafile.filename}\nMAC address: {mac_address}")
@@ -128,6 +109,16 @@ async def route_upload(
         log.info(f"Downloaded to {metadatafile.filename} to {temp_metadatapath}")
         # shutil.move(temp_path, final_path)
     return PlainTextResponse(f"Uploaded {datafile.filename} and {metadatafile.filename}")
+
+
+# get the log file
+@app.get("/log")
+def route_log() -> PlainTextResponse:
+    """Gets the log file."""
+    out = get_log_reversed(100).strip()
+    if not out:
+        out = "(empty log file)"
+    return PlainTextResponse(out)
 
 
 if __name__ == "__main__":
