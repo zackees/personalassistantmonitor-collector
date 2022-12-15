@@ -22,7 +22,12 @@ def make_logger(name: str) -> Logger:
     # Use an absolute path to prevent file rotation trouble.
     # Rotate log after reaching LOG_SIZE, keep LOG_HISTORY old copies.
     rotate_handler = ConcurrentRotatingFileHandler(
-        LOG_SYSTEM, "a", LOG_SIZE, LOG_HISTORY, use_gzip=LOGGING_USE_GZIP, encoding="utf-8"
+        LOG_SYSTEM,
+        "a",
+        LOG_SIZE,
+        LOG_HISTORY,
+        use_gzip=LOGGING_USE_GZIP,
+        encoding="utf-8",
     )
     rotate_handler.setFormatter(Formatter(LOGGING_FMT))
     log.addHandler(rotate_handler)

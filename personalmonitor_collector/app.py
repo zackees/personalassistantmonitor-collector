@@ -4,21 +4,21 @@
 
 # pylint: disable=logging-fstring-interpolation
 
+
 import os
 from datetime import datetime
 from tempfile import TemporaryDirectory
 from hmac import compare_digest
+from io import StringIO
 import requests  # type: ignore
-
-# import shutil
 import uvicorn  # type: ignore
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
-from fastapi.responses import RedirectResponse, JSONResponse, PlainTextResponse  # type: ignore
+from fastapi.responses import RedirectResponse, PlainTextResponse  # type: ignore
 from fastapi import FastAPI, UploadFile, File  # type: ignore
-
-from personalmonitor_collector.version import VERSION
+from personalmonitor_collector.models import AudioMetadata  # type: ignore
 from personalmonitor_collector.settings import API_KEY, UPLOAD_CHUNK_SIZE
 from personalmonitor_collector.log import make_logger, get_log_reversed
+from personalmonitor_collector.version import VERSION
 
 STARTUP_DATETIME = datetime.now()
 
@@ -28,6 +28,7 @@ log = make_logger(__name__)
 def app_description() -> str:
     """Get the app description."""
     lines = []
+    lines.append("Sensor Collection")
     lines.append("  * Version: " + VERSION)
     lines.append("  * Started at: " + str(STARTUP_DATETIME))
     return "\n".join(lines)
@@ -61,13 +62,13 @@ async def async_download(src: UploadFile, dst: str) -> None:
 
 
 @app.get("/", include_in_schema=False)
-async def route_index() -> RedirectResponse:
+async def redirect_default() -> RedirectResponse:
     """By default redirect to the fastapi docs."""
     return RedirectResponse(url="/docs", status_code=302)
 
 
 @app.get("/time")
-async def route_time(use_iso_fmt: bool = False) -> PlainTextResponse:
+async def what_is_the_time(use_iso_fmt: bool = False) -> PlainTextResponse:
     """Gets the current timestamp. if use_iso_fmt is False then use unix timestamp."""
     log.info("Time requested.")
     if use_iso_fmt:
@@ -78,42 +79,65 @@ async def route_time(use_iso_fmt: bool = False) -> PlainTextResponse:
     return PlainTextResponse(str(unix_timestamp))
 
 
-@app.get("/geocode_ip")
-def route_geocode_ip(ip_address: str) -> JSONResponse:
-    """Service translates an IP address into a location."""
+@app.get("/locate_ip")
+def locate_ip_address(ip_address: str) -> PlainTextResponse:
+    """
+    Input an ip address and output the location.
+    You can find your IP address at https://www.whatismyip.com/
+    """
     log.info("Geocoding IP address %s...", ip_address)
     request_url = f"https://www.iplocate.io/api/lookup/{ip_address}"
     response = requests.get(request_url, timeout=10)
-    return JSONResponse(status_code=response.status_code, content=response.json())
+    response_values: dict = response.json()
+    # Returns a response like:
+    # {
+    #   "ip": "52.119.119.42",
+    #   "country": "United States",
+    #   "country_code": "US",
+    #   "city": "San Francisco",
+    #   "continent": "North America",
+    #   "latitude": 37.7703,
+    #   "longitude": -122.4407,
+    #   "time_zone": "America/Los_Angeles",
+    #   "postal_code": "94117",
+    #   "org": "MONKEYBRAINS",
+    #   "asn": "AS32329",
+    #   "subdivision": "California",
+    #   "subdivision2": null
+    # }
+    buffer = StringIO()
+    for key, value in response_values.items():
+        buffer.write(f"{key}={value}\n")
+        buffer.write(key)
+        buffer.write("=")
+        buffer.write(value)
+        buffer.write("\n")
+    buffer.write("\n")
+    return PlainTextResponse(status_code=response.status_code, content=buffer.getvalue())
 
 
-@app.post("/upload")
-async def route_upload(
-    api_key: str,
-    mac_address: str,
-    datafile: UploadFile = File(...),
-    metadatafile: UploadFile = File(...),
+@app.post("/v1/upload_audio_data")
+async def upload_sensor_data(
+    api_key: str, metadata: AudioMetadata, datafile: UploadFile = File(...)
 ) -> PlainTextResponse:
     """Upload endpoint for the PAM-sensor]"""
     if not compare_digest(api_key, API_KEY):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
+    mac_address = metadata.mac_address.lower()
     log.info(f"Upload called with:\n  File: {datafile.filename}\nMAC address: {mac_address}")
     with TemporaryDirectory() as temp_dir:
+        # Just tests the download functionality and then discards the files.
         temp_datapath: str = os.path.join(temp_dir, datafile.filename)
-        temp_metadatapath: str = os.path.join(temp_dir, metadatafile.filename)
         await async_download(datafile, temp_datapath)
         await datafile.close()
-        log.info(f"Downloaded to {datafile.filename} to {temp_metadatapath}")
-        await async_download(metadatafile, temp_metadatapath)
-        await metadatafile.close()
-        log.info(f"Downloaded to {metadatafile.filename} to {temp_metadatapath}")
-        # shutil.move(temp_path, final_path)
-    return PlainTextResponse(f"Uploaded {datafile.filename} and {metadatafile.filename}")
+        log.info(f"Downloaded to {datafile.filename} to {temp_datapath}")
+        log.info(f"Metadata: {metadata}")
+    return PlainTextResponse(f"Uploaded {datafile.filename}")
 
 
 # get the log file
 @app.get("/log")
-def route_log() -> PlainTextResponse:
+def system_log() -> PlainTextResponse:
     """Gets the log file."""
     out = get_log_reversed(100).strip()
     if not out:

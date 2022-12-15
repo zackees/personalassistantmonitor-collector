@@ -6,3 +6,4 @@ pathvalidate
 concurrent-log-handler
 file_read_backwards
 requests
+pydantic
