@@ -149,7 +149,7 @@ def what_is_my_ip(request: Request) -> PlainTextResponse:
     forwarded_for = context.data.get("X-Forwarded-For", None)
     if forwarded_for is None:
         # In this case we are not behind a proxy, so just return the IP address.
-        return PlainTextResponse(request.client.host)
+        return PlainTextResponse(request.client.host)  # type: ignore
     first_ip = forwarded_for.split(",")[0]
     return PlainTextResponse(first_ip)
 
