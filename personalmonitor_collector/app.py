@@ -12,6 +12,7 @@ from hmac import compare_digest
 from io import StringIO
 import requests  # type: ignore
 import uvicorn  # type: ignore
+from starlette_context import middleware, plugins, context
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
 from fastapi.responses import RedirectResponse, PlainTextResponse  # type: ignore
 from fastapi import FastAPI, UploadFile, File, Request  # type: ignore
@@ -51,6 +52,11 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+app.add_middleware(
+    middleware.ContextMiddleware,
+    plugins=(plugins.ForwardedForPlugin(),),
 )
 
 
@@ -140,8 +146,12 @@ async def upload_sensor_data(
 def what_is_my_ip(request: Request) -> PlainTextResponse:
     """Gets the current IP address."""
     log.info("IP address requested.")
-    out = f"Host: {request.client.host}\nHeaders: {request.headers}\n"
-    return PlainTextResponse(out)
+    forwarded_for = context.data["X-Forwarded-For"]
+    out: list[str] = []
+    out.append(f"Host: {request.client.host}")  # type: ignore
+    out.append(f"Forwarded for: {forwarded_for}")
+    out.append(f"Headers: {request.headers}")
+    return PlainTextResponse("\n\n".join(out))
 
 
 # get the log file
