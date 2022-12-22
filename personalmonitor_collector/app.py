@@ -143,15 +143,14 @@ async def upload_sensor_data(
 
 
 @app.get("/what_is_my_ip")
-def what_is_my_ip(request: Request) -> PlainTextResponse:
+def what_is_my_ip() -> PlainTextResponse:
     """Gets the current IP address."""
     log.info("IP address requested.")
-    forwarded_for = context.data["X-Forwarded-For"]
-    out: list[str] = []
-    out.append(f"Host: {request.client.host}")  # type: ignore
-    out.append(f"Forwarded for: {forwarded_for}")
-    out.append(f"Headers: {request.headers}")
-    return PlainTextResponse("\n\n".join(out))
+    forwarded_for = context.data.get("X-Forwarded-For", [])
+    if len(forwarded_for) == 0:
+        log.error("Could not find X-Forwarded-For header.")
+        return PlainTextResponse(status_code=404, content="No X-Forwarded-For header found.")
+    return PlainTextResponse(forwarded_for[0])
 
 
 # get the log file
