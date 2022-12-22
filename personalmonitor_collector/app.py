@@ -14,7 +14,7 @@ import requests  # type: ignore
 import uvicorn  # type: ignore
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
 from fastapi.responses import RedirectResponse, PlainTextResponse  # type: ignore
-from fastapi import FastAPI, UploadFile, File  # type: ignore
+from fastapi import FastAPI, UploadFile, File, Request  # type: ignore
 from personalmonitor_collector.models import AudioMetadata  # type: ignore
 from personalmonitor_collector.settings import API_KEY, UPLOAD_CHUNK_SIZE
 from personalmonitor_collector.log import make_logger, get_log_reversed
@@ -134,6 +134,14 @@ async def upload_sensor_data(
         log.info(f"Downloaded to {datafile.filename} to {temp_datapath}")
         log.info(f"Metadata: {metadata}")
     return PlainTextResponse(f"Uploaded {datafile.filename}")
+
+
+@app.get("/what_is_my_ip")
+def what_is_my_ip(request: Request) -> PlainTextResponse:
+    """Gets the current IP address."""
+    log.info("IP address requested.")
+    out = f"Host: {request.client.host}\nHeaders: {request.headers}\n"
+    return PlainTextResponse(out)
 
 
 # get the log file
