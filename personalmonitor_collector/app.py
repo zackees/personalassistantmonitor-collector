@@ -151,6 +151,18 @@ async def upload_sensor_data(
     return PlainTextResponse(f"Uploaded {datafile.filename}")
 
 
+@app.post("/test_upload")
+async def test_upload(datafile: UploadFile = File(...)) -> PlainTextResponse:
+    """Upload endpoint for the PAM-sensor]"""
+    with TemporaryDirectory() as temp_dir:
+        # Just tests the download functionality and then discards the files.
+        temp_datapath: str = os.path.join(temp_dir, datafile.filename)
+        await async_download(datafile, temp_datapath)
+        await datafile.close()
+        log.info(f"Downloaded to {datafile.filename} to {temp_datapath}")
+    return PlainTextResponse(f"Uploaded {datafile.filename}")
+
+
 @app.get("/what_is_my_ip")
 def what_is_my_ip(request: Request) -> PlainTextResponse:
     """Gets the current IP address."""
