@@ -3,13 +3,13 @@
 
 #### Platform tests
 
-[![Actions Status](https://github.com/zackees/personalmonitor-collector/workflows/MacOS_Tests/badge.svg)](https://github.com/zackees/personalmonitor-collector/actions/workflows/test_macos.yml)
-[![Actions Status](https://github.com/zackees/personalmonitor-collector/workflows/Win_Tests/badge.svg)](https://github.com/zackees/personalmonitor-collector/actions/workflows/test_win.yml)
-[![Actions Status](https://github.com/zackees/personalmonitor-collector/workflows/Ubuntu_Tests/badge.svg)](https://github.com/zackees/personalmonitor-collector/actions/workflows/test_ubuntu.yml)
+[![MacOS_Tests](https://github.com/zackees/personalassistantmonitor-collector/actions/workflows/test_macos.yml/badge.svg)](https://github.com/zackees/personalassistantmonitor-collector/actions/workflows/test_macos.yml)
+[![Win_Tests](https://github.com/zackees/personalassistantmonitor-collector/actions/workflows/test_win.yml/badge.svg)](https://github.com/zackees/personalassistantmonitor-collector/actions/workflows/test_win.yml)
+[![Ubuntu_Tests](https://github.com/zackees/personalassistantmonitor-collector/actions/workflows/test_ubuntu.yml/badge.svg)](https://github.com/zackees/personalassistantmonitor-collector/actions/workflows/test_ubuntu.yml)
 
 #### Lint
 
-[![Actions Status](https://github.com/zackees/personalmonitor-collector/workflows/Lint/badge.svg)](https://github.com/zackees/personalmonitor-collector/actions/workflows/lint.yml)
+[![Lint](https://github.com/zackees/personalassistantmonitor-collector/actions/workflows/lint.yml/badge.svg)](https://github.com/zackees/personalassistantmonitor-collector/actions/workflows/lint.yml)
 
 Example FastAPI Project with Docker, ready for Render.com / DigitalOcean
 
