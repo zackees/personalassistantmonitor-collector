@@ -10,7 +10,6 @@ from datetime import datetime
 from tempfile import TemporaryDirectory
 from hmac import compare_digest
 from io import StringIO
-from typing import Optional
 import requests  # type: ignore
 import uvicorn  # type: ignore
 from starlette_context import middleware, plugins, context
@@ -99,7 +98,7 @@ async def what_is_the_time(use_iso_fmt: bool = False) -> PlainTextResponse:
 
 
 @app.get("/locate_ip")
-def locate_ip_address(request: Request, ip_address: Optional[str]) -> PlainTextResponse:
+def locate_ip_address(request: Request, ip_address: str | None = None) -> PlainTextResponse:
     """
     Input an ip address and output the location.
     You can find your IP address at https://www.whatismyip.com/
