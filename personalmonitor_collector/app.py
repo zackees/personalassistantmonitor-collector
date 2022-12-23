@@ -10,6 +10,7 @@ from datetime import datetime
 from tempfile import TemporaryDirectory
 from hmac import compare_digest
 from io import StringIO
+from typing import Optional
 import requests  # type: ignore
 import uvicorn  # type: ignore
 from starlette_context import middleware, plugins, context
@@ -20,6 +21,7 @@ from personalmonitor_collector.models import AudioMetadata  # type: ignore
 from personalmonitor_collector.settings import API_KEY, UPLOAD_CHUNK_SIZE
 from personalmonitor_collector.log import make_logger, get_log_reversed
 from personalmonitor_collector.version import VERSION
+
 
 STARTUP_DATETIME = datetime.now()
 
@@ -97,7 +99,7 @@ async def what_is_the_time(use_iso_fmt: bool = False) -> PlainTextResponse:
 
 
 @app.get("/locate_ip")
-def locate_ip_address(request: Request, ip_address: str | None) -> PlainTextResponse:
+def locate_ip_address(request: Request, ip_address: Optional[str]) -> PlainTextResponse:
     """
     Input an ip address and output the location.
     You can find your IP address at https://www.whatismyip.com/
@@ -131,9 +133,7 @@ def locate_ip_address(request: Request, ip_address: str | None) -> PlainTextResp
         buffer.write(value)
         buffer.write("\n")
     buffer.write("\n")
-    return PlainTextResponse(
-        status_code=response.status_code, content=buffer.getvalue()
-    )
+    return PlainTextResponse(status_code=response.status_code, content=buffer.getvalue())
 
 
 @app.post("/v1/upload_audio_data")
@@ -144,9 +144,7 @@ async def upload_sensor_data(
     if not compare_digest(api_key, API_KEY):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     mac_address = metadata.mac_address.lower()
-    log.info(
-        f"Upload called with:\n  File: {datafile.filename}\nMAC address: {mac_address}"
-    )
+    log.info(f"Upload called with:\n  File: {datafile.filename}\nMAC address: {mac_address}")
     with TemporaryDirectory() as temp_dir:
         # Just tests the download functionality and then discards the files.
         temp_datapath: str = os.path.join(temp_dir, datafile.filename)
