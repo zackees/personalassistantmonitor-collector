@@ -60,6 +60,16 @@ app.add_middleware(
 )
 
 
+def try_find_ip_address(request: Request) -> str:
+    """Finds the IP address of the computer."""
+    # https://stackoverflow.com/a/166589
+    forwarded_for = context.data.get("X-Forwarded-For", None)
+    if forwarded_for is None:
+        return request.client.host  # type: ignore
+    first_ip = forwarded_for.split(",")[0]
+    return first_ip
+
+
 async def async_download(src: UploadFile, dst: str) -> None:
     """Downloads a file to the destination."""
     with open(dst, mode="wb") as filed:
@@ -87,11 +97,12 @@ async def what_is_the_time(use_iso_fmt: bool = False) -> PlainTextResponse:
 
 
 @app.get("/locate_ip")
-def locate_ip_address(ip_address: str) -> PlainTextResponse:
+def locate_ip_address(request: Request, ip_address: str | None) -> PlainTextResponse:
     """
     Input an ip address and output the location.
     You can find your IP address at https://www.whatismyip.com/
     """
+    ip_address = ip_address or try_find_ip_address(request)
     log.info("Geocoding IP address %s...", ip_address)
     request_url = f"https://www.iplocate.io/api/lookup/{ip_address}"
     response = requests.get(request_url, timeout=10)
@@ -120,7 +131,9 @@ def locate_ip_address(ip_address: str) -> PlainTextResponse:
         buffer.write(value)
         buffer.write("\n")
     buffer.write("\n")
-    return PlainTextResponse(status_code=response.status_code, content=buffer.getvalue())
+    return PlainTextResponse(
+        status_code=response.status_code, content=buffer.getvalue()
+    )
 
 
 @app.post("/v1/upload_audio_data")
@@ -131,7 +144,9 @@ async def upload_sensor_data(
     if not compare_digest(api_key, API_KEY):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     mac_address = metadata.mac_address.lower()
-    log.info(f"Upload called with:\n  File: {datafile.filename}\nMAC address: {mac_address}")
+    log.info(
+        f"Upload called with:\n  File: {datafile.filename}\nMAC address: {mac_address}"
+    )
     with TemporaryDirectory() as temp_dir:
         # Just tests the download functionality and then discards the files.
         temp_datapath: str = os.path.join(temp_dir, datafile.filename)
@@ -146,14 +161,10 @@ async def upload_sensor_data(
 def what_is_my_ip(request: Request) -> PlainTextResponse:
     """Gets the current IP address."""
     log.info("IP address requested.")
-    forwarded_for = context.data.get("X-Forwarded-For", None)
-    if forwarded_for is None:
-        # In this case we are not behind a proxy, so just return the IP address.
-        if request.client.host is None:
-            return PlainTextResponse(status_code=403, content="No IP address found.")
-        return PlainTextResponse(request.client.host)  # type: ignore
-    first_ip = forwarded_for.split(",")[0]
-    return PlainTextResponse(first_ip)
+    ip_address = try_find_ip_address(request)
+    if ip_address is None:
+        return PlainTextResponse(status_code=403, content="No IP address found.")
+    return PlainTextResponse(ip_address)
 
 
 # get the log file
