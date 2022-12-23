@@ -128,9 +128,9 @@ def locate_ip_address(request: Request, ip_address: Optional[str]) -> PlainTextR
     buffer = StringIO()
     for key, value in response_values.items():
         buffer.write(f"{key}={value}\n")
-        buffer.write(key)
+        buffer.write(str(key))
         buffer.write("=")
-        buffer.write(value)
+        buffer.write(str(value))
         buffer.write("\n")
     buffer.write("\n")
     return PlainTextResponse(status_code=response.status_code, content=buffer.getvalue())
