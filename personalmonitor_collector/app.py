@@ -15,8 +15,7 @@ import uvicorn  # type: ignore
 from starlette_context import middleware, plugins, context
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
 from fastapi.responses import RedirectResponse, PlainTextResponse  # type: ignore
-from fastapi import FastAPI, UploadFile, File, Request  # type: ignore
-from personalmonitor_collector.models import AudioMetadata  # type: ignore
+from fastapi import FastAPI, UploadFile, File, Request, Header  # type: ignore
 from personalmonitor_collector.settings import API_KEY, UPLOAD_CHUNK_SIZE
 from personalmonitor_collector.log import make_logger, get_log_reversed
 from personalmonitor_collector.version import VERSION
@@ -148,23 +147,29 @@ def locate_ip_address(request: Request, ip_address: str | None = None) -> PlainT
     return PlainTextResponse(status_code=response.status_code, content=buffer.getvalue())
 
 
-@app.post("/v1/upload_audio_data")
+@app.post("/v1/upload_mp3_data")
 async def upload_sensor_data(
-    api_key: str, metadata: AudioMetadata, datafile: UploadFile = File(...)
+    mp3: UploadFile = File(...),
+    api_key: str = Header(str),
+    timestamp: int = Header(int),
+    mac_address: str = Header(str),
+    zipcode: str = Header(str),
 ) -> PlainTextResponse:
     """Upload endpoint for the PAM-sensor]"""
     if not compare_digest(api_key, API_KEY):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
-    mac_address = metadata.mac_address.lower()
-    log.info(f"Upload called with:\n  File: {datafile.filename}\nMAC address: {mac_address}")
+    log.info(f"Upload called with:\n  File: {mp3.filename}\nMAC address: {mac_address}")
     with TemporaryDirectory() as temp_dir:
         # Just tests the download functionality and then discards the files.
-        temp_datapath: str = os.path.join(temp_dir, datafile.filename)
-        await async_download(datafile, temp_datapath)
-        await datafile.close()
-        log.info(f"Downloaded to {datafile.filename} to {temp_datapath}")
-        log.info(f"Metadata: {metadata}")
-    return PlainTextResponse(f"Uploaded {datafile.filename}")
+        temp_datapath: str = os.path.join(temp_dir, mp3.filename)
+        await async_download(mp3, temp_datapath)
+        await mp3.close()
+        log.info(f"Downloaded to {mp3.filename} to {temp_datapath}")
+        log.info(f"mp3 timestamp: {timestamp}")
+        log.info(f"mac_address: {mac_address}")
+        log.info(f"zipcode: {zipcode}")
+
+    return PlainTextResponse(f"Uploaded {mp3.filename}")
 
 
 @app.post("/test_upload")
