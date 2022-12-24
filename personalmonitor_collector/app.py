@@ -60,6 +60,11 @@ app.add_middleware(
     plugins=(plugins.ForwardedForPlugin(),),
 )
 
+# Super simple cache that stores the IP location for 24 hours.
+IP_LOCATION_CACHE: dict[str, str] = {}
+IP_LOCATION_CACHE_RESET_TIME = datetime.now()
+IP_LOCATION_CACHE_RESET_PERIOD = 60 * 60 * 24
+
 
 def try_find_ip_address(request: Request) -> str:
     """Finds the IP address of the computer."""
@@ -103,8 +108,18 @@ def locate_ip_address(request: Request, ip_address: str | None = None) -> PlainT
     Input an ip address and output the location.
     You can find your IP address at https://www.whatismyip.com/
     """
+    global IP_LOCATION_CACHE_RESET_TIME  # pylint: disable=global-statement
+    ipcache_alive_time = (datetime.now() - IP_LOCATION_CACHE_RESET_TIME).total_seconds()
+    if ipcache_alive_time > IP_LOCATION_CACHE_RESET_PERIOD:
+        log.info("Resetting IP location cache...")
+        IP_LOCATION_CACHE_RESET_TIME = datetime.now()
+        IP_LOCATION_CACHE.clear()
     ip_address = ip_address or try_find_ip_address(request)
     log.info("Geocoding IP address %s...", ip_address)
+    cached_value = IP_LOCATION_CACHE.get(ip_address, None)
+    if cached_value is not None:
+        log.info("Using cached value for %s...", ip_address)
+        return PlainTextResponse(cached_value)
     request_url = f"https://www.iplocate.io/api/lookup/{ip_address}"
     response = requests.get(request_url, timeout=10)
     response_values: dict = response.json()
@@ -129,6 +144,7 @@ def locate_ip_address(request: Request, ip_address: str | None = None) -> PlainT
         buffer.write(f"{key}={value}\n")
         buffer.write("\n")
     buffer.write("\n")
+    IP_LOCATION_CACHE[ip_address] = buffer.getvalue()
     return PlainTextResponse(status_code=response.status_code, content=buffer.getvalue())
 
 
