@@ -150,10 +150,10 @@ def locate_ip_address(request: Request, ip_address: str | None = None) -> PlainT
 @app.post("/v1/upload_mp3_data")
 async def upload_sensor_data(
     mp3: UploadFile = File(...),
-    api_key: str = Header(str),
-    timestamp: int = Header(int),
-    mac_address: str = Header(str),
-    zipcode: str = Header(str),
+    api_key: str = Header(...),
+    timestamp: int = Header(...),
+    mac_address: str = Header(...),
+    zipcode: str = Header(...),
 ) -> PlainTextResponse:
     """Upload endpoint for the PAM-sensor]"""
     if not compare_digest(api_key, API_KEY):
