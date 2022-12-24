@@ -165,13 +165,13 @@ def locate_ip_address(
 @app.post("/v1/upload_mp3_data")
 async def upload_sensor_data(
     mp3: UploadFile = File(...),
-    api_key: str = Header(...),
+    x_api_key: str = Header(...),
     timestamp: int = Header(...),
     mac_address: str = Header(...),
     zipcode: str = Header(...),
 ) -> PlainTextResponse:
     """Upload endpoint for the PAM-sensor]"""
-    if not is_authenticated(api_key):
+    if not is_authenticated(x_api_key):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     log.info(f"Upload called with:\n  File: {mp3.filename}\nMAC address: {mac_address}")
     with TemporaryDirectory() as temp_dir:
@@ -200,10 +200,10 @@ async def test_upload(datafile: UploadFile = File(...)) -> PlainTextResponse:
 
 
 @app.get("/what_is_my_ip")
-def what_is_my_ip(request: Request, api_key: str = Header(...)) -> PlainTextResponse:
+def what_is_my_ip(request: Request, x_api_key: str = Header(...)) -> PlainTextResponse:
     """Gets the current IP address."""
     log.info("IP address requested.")
-    if not is_authenticated(api_key):
+    if not is_authenticated(x_api_key):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     ip_address = try_find_ip_address(request)
     if ip_address is None:
@@ -213,9 +213,9 @@ def what_is_my_ip(request: Request, api_key: str = Header(...)) -> PlainTextResp
 
 # get the log file
 @app.get("/log")
-def system_log(api_key: str = Header(...)) -> PlainTextResponse:
+def system_log(x_api_key: str = Header(...)) -> PlainTextResponse:
     """Gets the log file."""
-    if not is_authenticated(api_key):
+    if not is_authenticated(x_api_key):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     out = get_log_reversed(100).strip()
     if not out:
