@@ -16,7 +16,7 @@ from starlette_context import middleware, plugins, context
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
 from fastapi.responses import RedirectResponse, PlainTextResponse  # type: ignore
 from fastapi import FastAPI, UploadFile, File, Request, Header  # type: ignore
-from personalmonitor_collector.settings import API_KEY, UPLOAD_CHUNK_SIZE
+from personalmonitor_collector.settings import API_KEY, UPLOAD_CHUNK_SIZE, IS_TEST
 from personalmonitor_collector.log import make_logger, get_log_reversed
 from personalmonitor_collector.version import VERSION
 
@@ -30,6 +30,7 @@ def app_description() -> str:
     """Get the app description."""
     lines = []
     lines.append("Sensor Collection")
+    lines.append("  * MODE: " + ("TEST" if IS_TEST else "PRODUCTION"))
     lines.append("  * API Key: " + API_KEY)
     lines.append("  * Version: " + VERSION)
     lines.append("  * Started at: " + str(STARTUP_DATETIME))
@@ -63,6 +64,16 @@ app.add_middleware(
 IP_LOCATION_CACHE: dict[str, str] = {}
 IP_LOCATION_CACHE_RESET_TIME = datetime.now()
 IP_LOCATION_CACHE_RESET_PERIOD = 60 * 60 * 24
+
+
+def is_authenticated(api_key: str) -> bool:
+    """Checks if the request is authenticated."""
+    if IS_TEST:
+        return True
+    out = compare_digest(api_key, API_KEY)
+    if not out:
+        log.warning("Invalid API key attempted: %s", api_key)
+    return out
 
 
 def try_find_ip_address(request: Request) -> str:
@@ -102,11 +113,15 @@ async def what_is_the_time(use_iso_fmt: bool = False) -> PlainTextResponse:
 
 
 @app.get("/locate_ip")
-def locate_ip_address(request: Request, ip_address: str | None = None) -> PlainTextResponse:
+def locate_ip_address(
+    request: Request, api_key: str = Header(...), ip_address: str | None = None
+) -> PlainTextResponse:
     """
     Input an ip address and output the location.
     You can find your IP address at https://www.whatismyip.com/
     """
+    if not is_authenticated(api_key):
+        return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     global IP_LOCATION_CACHE_RESET_TIME  # pylint: disable=global-statement
     ipcache_alive_time = (datetime.now() - IP_LOCATION_CACHE_RESET_TIME).total_seconds()
     if ipcache_alive_time > IP_LOCATION_CACHE_RESET_PERIOD:
@@ -156,7 +171,7 @@ async def upload_sensor_data(
     zipcode: str = Header(...),
 ) -> PlainTextResponse:
     """Upload endpoint for the PAM-sensor]"""
-    if not compare_digest(api_key, API_KEY):
+    if not is_authenticated(api_key):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     log.info(f"Upload called with:\n  File: {mp3.filename}\nMAC address: {mac_address}")
     with TemporaryDirectory() as temp_dir:
@@ -185,9 +200,11 @@ async def test_upload(datafile: UploadFile = File(...)) -> PlainTextResponse:
 
 
 @app.get("/what_is_my_ip")
-def what_is_my_ip(request: Request) -> PlainTextResponse:
+def what_is_my_ip(request: Request, api_key: str = Header(...)) -> PlainTextResponse:
     """Gets the current IP address."""
     log.info("IP address requested.")
+    if not is_authenticated(api_key):
+        return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     ip_address = try_find_ip_address(request)
     if ip_address is None:
         return PlainTextResponse(status_code=403, content="No IP address found.")
@@ -196,8 +213,10 @@ def what_is_my_ip(request: Request) -> PlainTextResponse:
 
 # get the log file
 @app.get("/log")
-def system_log() -> PlainTextResponse:
+def system_log(api_key: str = Header(...)) -> PlainTextResponse:
     """Gets the log file."""
+    if not is_authenticated(api_key):
+        return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     out = get_log_reversed(100).strip()
     if not out:
         out = "(empty log file)"

@@ -4,6 +4,7 @@ Settings.
 
 import os
 
+IS_TEST = True
 API_KEY = "000"
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 UPLOAD_CHUNK_SIZE = 1024 * 64
