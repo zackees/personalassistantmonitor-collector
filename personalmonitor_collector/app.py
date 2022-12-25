@@ -114,13 +114,13 @@ async def what_is_the_time(use_iso_fmt: bool = False) -> PlainTextResponse:
 
 @app.get("/locate_ip")
 def locate_ip_address(
-    request: Request, api_key: str = Header(...), ip_address: str | None = None
+    request: Request, x_api_key: str = Header(...), ip_address: str | None = None
 ) -> PlainTextResponse:
     """
     Input an ip address and output the location.
     You can find your IP address at https://www.whatismyip.com/
     """
-    if not is_authenticated(api_key):
+    if not is_authenticated(x_api_key):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     global IP_LOCATION_CACHE_RESET_TIME  # pylint: disable=global-statement
     ipcache_alive_time = (datetime.now() - IP_LOCATION_CACHE_RESET_TIME).total_seconds()
