@@ -166,9 +166,9 @@ def locate_ip_address(
 async def upload_sensor_data(
     mp3: UploadFile = File(...),
     x_api_key: str = Header(...),
-    timestamp: int = Header(...),
-    mac_address: str = Header(...),
-    zipcode: str = Header(...),
+    x_timestamp: int = Header(...),
+    x_mac_address: str = Header(...),
+    x_zipcode: str = Header(...),
 ) -> PlainTextResponse:
     """Upload endpoint for the PAM-sensor]"""
     if not is_authenticated(x_api_key):
