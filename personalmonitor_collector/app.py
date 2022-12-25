@@ -173,16 +173,16 @@ async def upload_sensor_data(
     """Upload endpoint for the PAM-sensor]"""
     if not is_authenticated(x_api_key):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
-    log.info(f"Upload called with:\n  File: {mp3.filename}\nMAC address: {mac_address}")
+    log.info(f"Upload called with:\n  File: {mp3.filename}\nMAC address: {x_mac_address}")
     with TemporaryDirectory() as temp_dir:
         # Just tests the download functionality and then discards the files.
         temp_datapath: str = os.path.join(temp_dir, mp3.filename)
         await async_download(mp3, temp_datapath)
         await mp3.close()
         log.info(f"Downloaded to {mp3.filename} to {temp_datapath}")
-        log.info(f"mp3 timestamp: {timestamp}")
-        log.info(f"mac_address: {mac_address}")
-        log.info(f"zipcode: {zipcode}")
+        log.info(f"mp3 timestamp: {x_timestamp}")
+        log.info(f"mac_address: {x_mac_address}")
+        log.info(f"zipcode: {x_zipcode}")
 
     return PlainTextResponse(f"Uploaded {mp3.filename}")
 
