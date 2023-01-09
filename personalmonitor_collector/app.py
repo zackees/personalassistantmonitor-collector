@@ -162,12 +162,9 @@ def locate_ip_address(
     buffer = StringIO()
     for key, value in response_values.items():
         buffer.write(f"{key}={value}\n")
-        buffer.write("\n")
     buffer.write("\n")
     IP_LOCATION_CACHE[ip_address] = buffer.getvalue()
-    return PlainTextResponse(
-        status_code=response.status_code, content=buffer.getvalue()
-    )
+    return PlainTextResponse(status_code=response.status_code, content=buffer.getvalue())
 
 
 @app.post("/v1/upload_mp3_data")
@@ -181,9 +178,7 @@ async def upload_sensor_data(
     """Upload endpoint for the PAM-sensor]"""
     if not is_authenticated(x_api_key):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
-    log.info(
-        f"Upload called with:\n  File: {mp3.filename}\nMAC address: {x_mac_address}"
-    )
+    log.info(f"Upload called with:\n  File: {mp3.filename}\nMAC address: {x_mac_address}")
     with TemporaryDirectory() as temp_dir:
         # Just tests the download functionality and then discards the files.
         temp_datapath: str = os.path.join(temp_dir, mp3.filename)
