@@ -183,6 +183,7 @@ async def upload_sensor_data(
         log.info(f"mp3 timestamp: {x_timestamp}")
         log.info(f"mac_address: {x_mac_address}")
         log.info(f"zipcode: {x_zipcode}")
+        log.info(f"Size of mp3 file: {os.path.getsize(temp_datapath)}")
 
     return PlainTextResponse(f"Uploaded {mp3.filename}")
 
