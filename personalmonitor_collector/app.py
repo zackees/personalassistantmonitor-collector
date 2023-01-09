@@ -10,13 +10,19 @@ from datetime import datetime
 from tempfile import TemporaryDirectory
 from hmac import compare_digest
 from io import StringIO
+import shutil
 import requests  # type: ignore
 import uvicorn  # type: ignore
 from starlette_context import middleware, plugins, context
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
-from fastapi.responses import RedirectResponse, PlainTextResponse  # type: ignore
+from fastapi.responses import RedirectResponse, PlainTextResponse, FileResponse  # type: ignore
 from fastapi import FastAPI, UploadFile, File, Request, Header  # type: ignore
-from personalmonitor_collector.settings import API_KEY, UPLOAD_CHUNK_SIZE, IS_TEST
+from personalmonitor_collector.settings import (
+    API_KEY,
+    UPLOAD_CHUNK_SIZE,
+    IS_TEST,
+    DATA_UPLOAD_DIR,
+)
 from personalmonitor_collector.log import make_logger, get_log_reversed
 from personalmonitor_collector.version import VERSION
 
@@ -159,7 +165,9 @@ def locate_ip_address(
         buffer.write("\n")
     buffer.write("\n")
     IP_LOCATION_CACHE[ip_address] = buffer.getvalue()
-    return PlainTextResponse(status_code=response.status_code, content=buffer.getvalue())
+    return PlainTextResponse(
+        status_code=response.status_code, content=buffer.getvalue()
+    )
 
 
 @app.post("/v1/upload_mp3_data")
@@ -173,7 +181,9 @@ async def upload_sensor_data(
     """Upload endpoint for the PAM-sensor]"""
     if not is_authenticated(x_api_key):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
-    log.info(f"Upload called with:\n  File: {mp3.filename}\nMAC address: {x_mac_address}")
+    log.info(
+        f"Upload called with:\n  File: {mp3.filename}\nMAC address: {x_mac_address}"
+    )
     with TemporaryDirectory() as temp_dir:
         # Just tests the download functionality and then discards the files.
         temp_datapath: str = os.path.join(temp_dir, mp3.filename)
@@ -184,8 +194,16 @@ async def upload_sensor_data(
         log.info(f"mac_address: {x_mac_address}")
         log.info(f"zipcode: {x_zipcode}")
         log.info(f"Size of mp3 file: {os.path.getsize(temp_datapath)}")
-
+        shutil.copy(temp_datapath, os.path.join(DATA_UPLOAD_DIR, mp3.filename))
+        log.info(f"Copied to {os.path.join(DATA_UPLOAD_DIR, mp3.filename)}")
     return PlainTextResponse(f"Uploaded {mp3.filename}")
+
+
+@app.get("/v1/download_mp3/{filename}")
+async def download_mp3(filename: str) -> FileResponse:
+    """Downloads a file from the server."""
+    log.info(f"Download called with: {filename}")
+    return FileResponse(os.path.join(DATA_UPLOAD_DIR, filename))
 
 
 @app.post("/test_upload")
