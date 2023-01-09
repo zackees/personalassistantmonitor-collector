@@ -126,11 +126,11 @@ def to_gm_offset(timez: str) -> int:
     return now.utcoffset().total_seconds() // 3600  # type: ignore
 
 
-#@app.get("/gmoffset")
-#async def get_timezone_offset(timezone: str) -> PlainTextResponse:
-#    """Gets the timezone offset."""
-#    log.info("Timezone requested: %s", timezone)
-#    return PlainTextResponse(str(to_gm_offset(timezone)))
+@app.get("/gmoffset")
+async def get_timezone_offset(timezone: str) -> PlainTextResponse:
+    """Gets the timezone offset."""
+    log.info("Timezone requested: %s", timezone)
+    return PlainTextResponse(str(to_gm_offset(timezone)))
 
 
 @app.get("/locate_ip")
