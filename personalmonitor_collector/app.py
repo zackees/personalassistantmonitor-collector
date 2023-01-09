@@ -123,7 +123,7 @@ def to_gm_offset(timez: str) -> int:
     """Converts a timezone to the offset from GMT."""
     tzone = pytz.timezone(timez)
     now = datetime.datetime.now(tzone)
-    return now.utcoffset().total_seconds() // 3600  # type: ignore
+    return now.utcoffset().total_seconds()  # type: ignore
 
 
 @app.get("/gmoffset")
