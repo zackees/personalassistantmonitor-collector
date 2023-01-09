@@ -6,7 +6,7 @@
 
 
 import os
-from datetime import datetime
+import datetime
 from tempfile import TemporaryDirectory
 from hmac import compare_digest
 from io import StringIO
@@ -27,7 +27,7 @@ from personalmonitor_collector.log import make_logger, get_log_reversed
 from personalmonitor_collector.version import VERSION
 
 
-STARTUP_DATETIME = datetime.now()
+STARTUP_DATETIME = datetime.datetime.now()
 
 log = make_logger(__name__)
 
@@ -68,7 +68,7 @@ app.add_middleware(
 
 # Super simple cache that stores the IP location for 24 hours.
 IP_LOCATION_CACHE: dict[str, str] = {}
-IP_LOCATION_CACHE_RESET_TIME = datetime.now()
+IP_LOCATION_CACHE_RESET_TIME = datetime.datetime.now()
 IP_LOCATION_CACHE_RESET_PERIOD = 60 * 60 * 24
 
 
@@ -113,9 +113,34 @@ async def what_is_the_time(use_iso_fmt: bool = False) -> PlainTextResponse:
     if use_iso_fmt:
         # return PlainTextResponse(str(datetime.now()))
         # as isoformat
-        return PlainTextResponse(str(datetime.now().isoformat()))
-    unix_timestamp = float(datetime.now().timestamp())
+        return PlainTextResponse(str(datetime.datetime.now().isoformat()))
+    unix_timestamp = float(datetime.datetime.now().timestamp())
     return PlainTextResponse(str(unix_timestamp))
+
+
+def to_gm_offset(timez: str) -> int:
+    """Converts a timezone string to a GMT offset."""
+    # Get the current UTC time
+    now = datetime.datetime.utcnow()
+    # Parse the timezone string into a timezone object
+    timezone = datetime.timezone(datetime.timedelta(minutes=int(timez[1:3]) * 60 + int(timez[3:5])))
+    # Convert the UTC time to the local time in the given timezone
+    local_time = now.replace(tzinfo=timezone)
+    if local_time:
+        # Calculate the time zone offset from GMT, in minutes
+        utcoffset = local_time.utcoffset()
+        if utcoffset is None:
+            raise ValueError("Invalid timezone")
+        offset = utcoffset.total_seconds() // 60
+        return int(offset)
+    raise ValueError("Invalid timezone")
+
+
+@app.get("/gmoffset/{timezone}")
+async def get_timezone_offset(timezone: str) -> PlainTextResponse:
+    """Gets the timezone offset."""
+    log.info("Timezone requested: %s", timezone)
+    return PlainTextResponse(str(to_gm_offset(timezone)))
 
 
 @app.get("/locate_ip")
@@ -129,10 +154,10 @@ def locate_ip_address(
     if not is_authenticated(x_api_key):
         return PlainTextResponse({"error": "Invalid API key"}, status_code=403)
     global IP_LOCATION_CACHE_RESET_TIME  # pylint: disable=global-statement
-    ipcache_alive_time = (datetime.now() - IP_LOCATION_CACHE_RESET_TIME).total_seconds()
+    ipcache_alive_time = (datetime.datetime.now() - IP_LOCATION_CACHE_RESET_TIME).total_seconds()
     if ipcache_alive_time > IP_LOCATION_CACHE_RESET_PERIOD:
         log.info("Resetting IP location cache...")
-        IP_LOCATION_CACHE_RESET_TIME = datetime.now()
+        IP_LOCATION_CACHE_RESET_TIME = datetime.datetime.now()
         IP_LOCATION_CACHE.clear()
     ip_address = ip_address or try_find_ip_address(request)
     log.info("Geocoding IP address %s...", ip_address)
@@ -159,6 +184,9 @@ def locate_ip_address(
     #   "subdivision": "California",
     #   "subdivision2": null
     # }
+    timezone = response_values.get("time_zone", None)
+    if timezone is not None:
+        response_values.update({"gm_offset": to_gm_offset(timezone)})
     buffer = StringIO()
     for key, value in response_values.items():
         buffer.write(f"{key}={value}\n")
