@@ -136,7 +136,7 @@ def to_gm_offset(timez: str) -> int:
     raise ValueError("Invalid timezone")
 
 
-@app.get("/gmoffset/{timezone}")
+@app.get("/gmoffset")
 async def get_timezone_offset(timezone: str) -> PlainTextResponse:
     """Gets the timezone offset."""
     log.info("Timezone requested: %s", timezone)
