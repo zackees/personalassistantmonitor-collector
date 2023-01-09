@@ -13,6 +13,7 @@ from io import StringIO
 import shutil
 import requests  # type: ignore
 import uvicorn  # type: ignore
+import pytz  # type: ignore
 from starlette_context import middleware, plugins, context
 from fastapi.middleware.cors import CORSMiddleware  # type: ignore
 from fastapi.responses import RedirectResponse, PlainTextResponse, FileResponse  # type: ignore
@@ -119,21 +120,10 @@ async def what_is_the_time(use_iso_fmt: bool = False) -> PlainTextResponse:
 
 
 def to_gm_offset(timez: str) -> int:
-    """Converts a timezone string to a GMT offset."""
-    # Get the current UTC time
-    now = datetime.datetime.utcnow()
-    # Parse the timezone string into a timezone object
-    timezone = datetime.timezone(datetime.timedelta(minutes=int(timez[1:3]) * 60 + int(timez[3:5])))
-    # Convert the UTC time to the local time in the given timezone
-    local_time = now.replace(tzinfo=timezone)
-    if local_time:
-        # Calculate the time zone offset from GMT, in minutes
-        utcoffset = local_time.utcoffset()
-        if utcoffset is None:
-            raise ValueError("Invalid timezone")
-        offset = utcoffset.total_seconds() // 60
-        return int(offset)
-    raise ValueError("Invalid timezone")
+    """Converts a timezone to the offset from GMT."""
+    tzone = pytz.timezone(timez)
+    now = datetime.datetime.now(tzone)
+    return now.utcoffset().total_seconds() // 3600  # type: ignore
 
 
 @app.get("/gmoffset")
