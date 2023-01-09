@@ -119,11 +119,11 @@ async def what_is_the_time(use_iso_fmt: bool = False) -> PlainTextResponse:
     return PlainTextResponse(str(unix_timestamp))
 
 
-def to_gm_offset(timez: str) -> int:
+def to_gm_offset(timez: str) -> float:
     """Converts a timezone to the offset from GMT."""
     tzone = pytz.timezone(timez)
     now = datetime.datetime.now(tzone)
-    return now.utcoffset().total_seconds()  # type: ignore
+    return now.utcoffset().total_seconds() / 3600.0  # type: ignore
 
 
 @app.get("/gmoffset")
