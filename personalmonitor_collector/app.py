@@ -212,9 +212,10 @@ async def upload_sensor_data(
     return PlainTextResponse(f"Uploaded {mp3.filename}")
 
 
-@app.get("/v1/download_mp3/{filename}")
-async def download_mp3(filename: str) -> FileResponse:
+@app.get("/download_test_mp3")
+async def download_mp3() -> FileResponse:
     """Downloads a file from the server."""
+    filename = "file.mp3"
     log.info(f"Download called with: {filename}")
     return FileResponse(os.path.join(DATA_UPLOAD_DIR, filename))
 
